@@ -6,10 +6,10 @@ if ($Ouser->is_login() != false) {
     exit();
 }
 
-// Check for login error from redirect
 $login_error = '';
-if (isset($_GET['error']) && $_GET['error'] == 1) {
-    $login_error = 'Invalid email or password. Please try again.';
+if (isset($_SESSION['login_error'])) {
+    $login_error = $_SESSION['login_error'];
+    unset($_SESSION['login_error']);
 }
 ?>
 
@@ -152,7 +152,7 @@ if (isset($_GET['error']) && $_GET['error'] == 1) {
             font-size: 0.95rem;
         }
 
-        .input-group {
+        .input-icon-wrapper {
             position: relative;
             display: flex;
             align-items: center;
@@ -162,13 +162,47 @@ if (isset($_GET['error']) && $_GET['error'] == 1) {
             position: absolute;
             left: 15px;
             color: #999;
-            z-index: 1;
+            z-index: 10;
             font-size: 1.1rem;
+            pointer-events: none;
+            transition: color 0.3s ease;
+        }
+
+        .input-icon-wrapper:focus-within .input-icon {
+            color: #667eea;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            color: #999;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: color 0.3s ease;
+            z-index: 10;
+        }
+
+        .toggle-password:hover {
+            color: #667eea;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            color: #999;
+            z-index: 10;
+            font-size: 1.1rem;
+            pointer-events: none;
+            transition: color 0.3s ease;
+        }
+
+        .input-icon-wrapper:focus-within .input-icon {
+            color: #667eea;
         }
 
         .form-control {
             width: 100%;
-            padding: 12px 15px 12px 45px;
+            padding: 12px 45px 12px 45px;
             border: 2px solid #e1e1e1;
             border-radius: 12px;
             font-size: 0.95rem;
@@ -474,7 +508,7 @@ if (isset($_GET['error']) && $_GET['error'] == 1) {
                                 <label for="email">
                                     <i class="fas fa-envelope me-2"></i>Email Address
                                 </label>
-                                <div class="input-group">
+                                <div class="input-icon-wrapper">
                                     <i class="fas fa-envelope input-icon"></i>
                                     <input 
                                         type="email" 
@@ -493,7 +527,7 @@ if (isset($_GET['error']) && $_GET['error'] == 1) {
                                 <label for="password">
                                     <i class="fas fa-lock me-2"></i>Password
                                 </label>
-                                <div class="input-group">
+                                <div class="input-icon-wrapper">
                                     <i class="fas fa-lock input-icon"></i>
                                     <input 
                                         type="password" 
@@ -576,68 +610,6 @@ if (isset($_GET['error']) && $_GET['error'] == 1) {
                 toggleIcon.classList.add('fa-eye');
             }
         }
-
-        // Form validation and submission handling
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            const email = document.getElementById('email');
-            const password = document.getElementById('password');
-            
-            // Basic client-side validation
-            if (!email.value.match(/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/)) {
-                e.preventDefault();
-                showError('Please enter a valid email address');
-                email.focus();
-                return false;
-            }
-            
-            if (password.value.length < 6) {
-                e.preventDefault();
-                showError('Password must be at least 6 characters long');
-                password.focus();
-                return false;
-            }
-            
-            // Show loading state
-            const submitBtn = this.querySelector('button[type="submit"]');
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
-            submitBtn.disabled = true;
-        });
-
-        // Show error message
-        function showError(message) {
-            // Remove any existing alerts
-            const existingAlert = document.querySelector('.alert');
-            if (existingAlert) {
-                existingAlert.remove();
-            }
-            
-            // Create new alert
-            const alertDiv = document.createElement('div');
-            alertDiv.className = 'alert alert-danger';
-            alertDiv.innerHTML = '<i class="fas fa-exclamation-circle"></i>' + message;
-            
-            // Insert at the top of the form
-            const form = document.getElementById('loginForm');
-            form.parentNode.insertBefore(alertDiv, form);
-            
-            // Auto remove after 5 seconds
-            setTimeout(() => {
-                if (alertDiv.parentNode) {
-                    alertDiv.remove();
-                }
-            }, 5000);
-        }
-
-        // Add input focus effects
-        document.querySelectorAll('.form-control').forEach(input => {
-            input.addEventListener('focus', function() {
-                this.parentElement.querySelector('.input-icon').style.color = '#667eea';
-            });
-            
-            input.addEventListener('blur', function() {
-                this.parentElement.querySelector('.input-icon').style.color = '#999';
-            });
-        });
 
         // Remember checkbox enhancement
         document.getElementById('remember').addEventListener('change', function() {

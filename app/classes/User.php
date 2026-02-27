@@ -119,4 +119,5 @@ class User extends Objects {
 
 }
 
+ob_end_clean();
 ?>
