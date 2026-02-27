@@ -20,7 +20,7 @@ class User extends Objects {
 			$_SESSION['user_id'] = $user->id;
 			$_SESSION['user_role'] = $user->role;
 			$_SESSION['user_name'] = $user->full_name;
-			redirect("index.php");
+			redirect("index.php?page=dashboard");
 			return true;
 		} else {
 			$_SESSION['login_error'] = "Invalid Email or Password";

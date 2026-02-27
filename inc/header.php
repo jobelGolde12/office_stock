@@ -53,7 +53,7 @@ $actual_link = explode('=', "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]");
 <div class="wrapper">
   <!-- Page Preloder -->
     <div id="page"></div>
-    <div id="loading"></div>
+    <style>#loading { display: none !important; }</style>
     
   <!-- Navbar -->
   <nav class="main-header navbar navbar-expand navbar-white navbar-light">
