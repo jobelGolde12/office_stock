@@ -93,7 +93,8 @@ class TursoStatement {
         $params = $this->params;
         
         // Check if we have named params
-        $hasNamedParams = !empty($params) && isset($params[array_keys($params)[0]]) && array_keys($params)[0][0] === ':';
+        $firstKey = !empty($params) ? array_keys($params)[0] : null;
+        $hasNamedParams = is_string($firstKey) && strpos($firstKey, ':') === 0;
         
         $paramValues = [];
         
@@ -113,7 +114,7 @@ class TursoStatement {
                     if (is_int($param)) {
                         $paramValues[] = ['type' => 'integer', 'value' => (string)$param];
                     } elseif (is_float($param)) {
-                        $paramValues[] = ['type' => 'float', 'value' => (string)$param];
+                        $paramValues[] = ['type' => 'float', 'value' => $param];
                     } elseif (is_null($param)) {
                         $paramValues[] = ['type' => 'null', 'value' => null];
                     } else {
@@ -127,7 +128,7 @@ class TursoStatement {
                 if (is_int($param)) {
                     $paramValues[] = ['type' => 'integer', 'value' => (string)$param];
                 } elseif (is_float($param)) {
-                    $paramValues[] = ['type' => 'float', 'value' => (string)$param];
+                    $paramValues[] = ['type' => 'float', 'value' => $param];
                 } elseif (is_null($param)) {
                     $paramValues[] = ['type' => 'null', 'value' => null];
                 } else {
@@ -137,7 +138,7 @@ class TursoStatement {
         }
 
         $requests = [
-            ['type' => 'execute', 'stmt' => ['sql' => $this->sql, 'args' => $paramValues ?: null]]
+            ['type' => 'execute', 'stmt' => ['sql' => $this->sql, 'args' => $paramValues]]
         ];
 
         $ch = curl_init($url);
