@@ -11,6 +11,12 @@ if (isset($_SESSION['login_error'])) {
     $login_error = $_SESSION['login_error'];
     unset($_SESSION['login_error']);
 }
+
+$login_debug_error = '';
+if (isset($_SESSION['login_debug_error'])) {
+    $login_debug_error = $_SESSION['login_debug_error'];
+    unset($_SESSION['login_debug_error']);
+}
 ?>
 
 <!DOCTYPE HTML>
@@ -496,10 +502,17 @@ if (isset($_SESSION['login_error'])) {
                         <h2 class="login-title">Welcome Back</h2>
                         <p class="login-subtitle">Please enter your credentials to access your account</p>
 
-                        <?php if (isset($login_error)): ?>
+                        <?php if ($login_error !== ''): ?>
                             <div class="alert alert-danger">
                                 <i class="fas fa-exclamation-circle"></i>
                                 <?php echo htmlspecialchars($login_error); ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php if ($login_debug_error !== ''): ?>
+                            <div class="alert alert-warning">
+                                <i class="fas fa-bug"></i>
+                                <?php echo htmlspecialchars($login_debug_error); ?>
                             </div>
                         <?php endif; ?>
 
