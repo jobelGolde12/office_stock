@@ -443,6 +443,35 @@ $dashboardInsights['empty_state'] = empty($recent_sales) && empty($top_products)
         height: 220px;
     }
 
+    .supplies-card-body {
+        padding: 12px 16px 16px;
+    }
+
+    .supplies-skeleton {
+        display: grid;
+        gap: 10px;
+    }
+
+    .supplies-skeleton .skeleton {
+        height: 44px;
+        border-radius: 8px;
+    }
+
+    .supplies-table-wrap {
+        overflow-x: auto;
+        border: 1px solid #e8edf5;
+        border-radius: 8px;
+    }
+
+    .supplies-table-wrap .dash-table {
+        min-width: 1080px;
+    }
+
+    .supplies-cost {
+        font-weight: 700;
+        color: #0f172a;
+    }
+
     .hidden-until-ready {
         display: block;
     }
@@ -505,6 +534,50 @@ $dashboardInsights['empty_state'] = empty($recent_sales) && empty($top_products)
             <?php echo htmlspecialchars($analyticsError); ?>
         </div>
     <?php endif; ?>
+
+    <div class="row mb-3">
+        <div class="col-12">
+            <section class="dash-panel" aria-labelledby="officeSuppliesHeading">
+                <div class="section-head">
+                    <h2 id="officeSuppliesHeading" class="section-title">Office Supplies</h2>
+                    <div class="section-actions">
+                        <span class="metric-chip" id="officeSuppliesCount">Loading...</span>
+                    </div>
+                </div>
+                <div class="supplies-card-body">
+                    <div id="officeSuppliesLoading" class="supplies-skeleton" aria-hidden="true">
+                        <div class="skeleton"></div>
+                        <div class="skeleton"></div>
+                        <div class="skeleton"></div>
+                        <div class="skeleton"></div>
+                    </div>
+
+                    <div id="officeSuppliesContainer" class="supplies-table-wrap" style="display: none;">
+                        <table class="dash-table" id="officeSuppliesTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Category ID</th>
+                                    <th>Item Name</th>
+                                    <th>Category</th>
+                                    <th>Description</th>
+                                    <th>Unit Cost</th>
+                                    <th>Stocks</th>
+                                    <th>Created</th>
+                                    <th>Updated</th>
+                                </tr>
+                            </thead>
+                            <tbody id="officeSuppliesTbody"></tbody>
+                        </table>
+                    </div>
+
+                    <div id="officeSuppliesEmpty" class="empty-state mt-2" style="display: none;">
+                        No office supplies found.
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
 
     <div class="row" style="row-gap: 16px;">
         <div class="col-12 col-sm-6 col-lg-3">
@@ -695,6 +768,7 @@ $dashboardInsights['empty_state'] = empty($recent_sales) && empty($top_products)
             </section>
         </div>
     </div>
+
 </div>
 
 <script>
@@ -772,6 +846,11 @@ $dashboardInsights['empty_state'] = empty($recent_sales) && empty($top_products)
 
     const trendCtx = document.getElementById('trendChart');
     const stockCtx = document.getElementById('stockChart');
+    const suppliesLoading = document.getElementById('officeSuppliesLoading');
+    const suppliesContainer = document.getElementById('officeSuppliesContainer');
+    const suppliesEmpty = document.getElementById('officeSuppliesEmpty');
+    const suppliesTbody = document.getElementById('officeSuppliesTbody');
+    const suppliesCount = document.getElementById('officeSuppliesCount');
 
     if (trendCtx && stockCtx && typeof Chart !== 'undefined') {
         new Chart(trendCtx.getContext('2d'), {
@@ -838,6 +917,79 @@ $dashboardInsights['empty_state'] = empty($recent_sales) && empty($top_products)
             }
         });
     }
+
+    function formatDate(value) {
+        if (!value) return 'N/A';
+        const d = new Date(value);
+        if (Number.isNaN(d.getTime())) return String(value);
+        return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: '2-digit' });
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function renderOfficeSupplies(rows) {
+        suppliesTbody.innerHTML = '';
+        rows.forEach((item) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${escapeHtml(item.id ?? '')}</td>
+                <td>${escapeHtml(item.category_id ?? '')}</td>
+                <td>${escapeHtml(item.item_name ?? 'N/A')}</td>
+                <td>${escapeHtml(item.category ?? 'Uncategorized')}</td>
+                <td>${escapeHtml(item.description ?? '-')}</td>
+                <td class=\"supplies-cost\">$${Number(item.unit_cost || 0).toFixed(2)}</td>
+                <td>${escapeHtml(item.stocks ?? 0)}</td>
+                <td>${escapeHtml(formatDate(item.created_at))}</td>
+                <td>${escapeHtml(formatDate(item.updated_at))}</td>
+            `;
+            suppliesTbody.appendChild(tr);
+        });
+    }
+
+    async function loadOfficeSupplies() {
+        if (!suppliesLoading || !suppliesContainer || !suppliesEmpty || !suppliesTbody || !suppliesCount) {
+            return;
+        }
+
+        suppliesLoading.style.display = 'grid';
+        suppliesContainer.style.display = 'none';
+        suppliesEmpty.style.display = 'none';
+        suppliesCount.textContent = 'Loading...';
+
+        try {
+            const response = await fetch('app/ajax/office_supplies_data.php', { credentials: 'same-origin' });
+            const payload = await response.json();
+
+            if (!response.ok || payload.status !== 'ok') {
+                throw new Error(payload.message || 'Failed to load office supplies');
+            }
+
+            const rows = Array.isArray(payload.data) ? payload.data : [];
+            suppliesCount.textContent = `${rows.length} items`;
+
+            if (rows.length === 0) {
+                suppliesEmpty.style.display = 'block';
+            } else {
+                renderOfficeSupplies(rows);
+                suppliesContainer.style.display = 'block';
+            }
+        } catch (error) {
+            suppliesCount.textContent = 'Unavailable';
+            suppliesEmpty.style.display = 'block';
+            suppliesEmpty.textContent = `Unable to load office supplies: ${error.message}`;
+        } finally {
+            suppliesLoading.style.display = 'none';
+        }
+    }
+
+    loadOfficeSupplies();
 
 })();
 </script>

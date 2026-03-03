@@ -48,7 +48,10 @@ h6,
 }
 
 .layout-fixed .main-header {
-  margin-left: var(--sidebar-width);
+  margin-left: 0 !important;
+  left: var(--sidebar-width);
+  right: 0;
+  width: auto;
 }
 
 .layout-fixed .content-wrapper,
@@ -63,6 +66,12 @@ h6,
   margin-left: 4.6rem;
 }
 
+.sidebar-collapse.layout-fixed .main-header {
+  left: 4.6rem;
+  right: 0;
+  width: auto;
+}
+
 @media (max-width: 991.98px) {
   .layout-fixed .main-header,
   .layout-fixed .content-wrapper,
@@ -71,6 +80,13 @@ h6,
   .sidebar-collapse.layout-fixed .content-wrapper,
   .sidebar-collapse.layout-fixed .main-footer {
     margin-left: 0;
+  }
+
+  .layout-fixed .main-header,
+  .sidebar-collapse.layout-fixed .main-header {
+    left: 0;
+    right: 0;
+    width: 100%;
   }
 }
 
@@ -257,10 +273,23 @@ h6,
 
 .sidebar-redesign .brand-link {
   min-height: 68px;
-  padding: 16px 18px;
+  padding: 16px 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  width: 100%;
+  width: var(--sidebar-width) !important;
+  min-width: var(--sidebar-width) !important;
+  max-width: var(--sidebar-width) !important;
   box-sizing: border-box;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.sidebar-collapse .sidebar-redesign .brand-link {
+  width: 4.6rem !important;
+  min-width: 4.6rem !important;
+  max-width: 4.6rem !important;
 }
 
 .sidebar-redesign .brand-text {
