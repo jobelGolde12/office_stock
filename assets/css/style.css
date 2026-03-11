@@ -333,7 +333,7 @@ h6,
 .sidebar-redesign .nav-sidebar .nav-treeview > .nav-item > .nav-link {
   min-height: 44px;
   margin: 2px 8px 2px 0;
-  padding: 10px 8px 10px 4px;
+  padding: 10px 8px 10px 0;
   border-radius: 8px;
   border-left: 3px solid transparent;
   display: flex;

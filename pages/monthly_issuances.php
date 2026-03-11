@@ -16,7 +16,7 @@ try {
     $stmt = $pdo->query("SELECT * FROM divisions WHERE is_active = 1 ORDER BY code ASC");
     $divisions = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    $stmt = $pdo->query("SELECT im.*, ic.name as category_name FROM inventory_master im LEFT JOIN inventory_categories ic ON im.category_id = ic.id WHERE im.stock_quantity > 0 ORDER BY im.item_name ASC");
+    $stmt = $pdo->query("SELECT im.*, ic.name as category_name FROM inventory_master im LEFT JOIN inventory_categories ic ON im.category_id = ic.id ORDER BY im.item_name ASC");
     $inventory = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
     $error = 'Unable to load data: ' . $e->getMessage();
