@@ -8,3 +8,5 @@
 [2026-03-03 04:35:31] LOGIN_SUCCESS {"user_id":10,"identifier":"ma**********@company.ph","table":"users","ip":"cli","ua":"unknown"}
 [2026-03-03 10:05:56] LOGIN_SUCCESS {"user_id":1,"identifier":"ma**********@company.ph","table":"users","ip":"127.0.0.1","ua":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"}
 [2026-03-05 17:03:06] LOGIN_SUCCESS {"user_id":1,"identifier":"ma**********@company.ph","table":"users","ip":"127.0.0.1","ua":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"}
+[2026-03-11 15:13:01] LOGIN_FAILED {"user_id":1,"table":"users","reason":"password_mismatch","identifier":"ma**********@company.ph","ip":"127.0.0.1","ua":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"}
+[2026-03-11 15:13:19] LOGIN_SUCCESS {"user_id":1,"identifier":"ma**********@company.ph","table":"users","ip":"127.0.0.1","ua":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36"}

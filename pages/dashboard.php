@@ -272,6 +272,64 @@ try {
     } catch (Exception $ignored) {
         // Office supplies tables may not exist in every tenant DB.
     }
+
+    // PRI Inventory Analytics
+    $priInventory = [
+        'total_items' => 0,
+        'total_stock_units' => 0,
+        'total_inventory_value' => 0.0,
+        'low_stock_count' => 0,
+        'out_of_stock_count' => 0,
+        'top_consuming_division' => null,
+        'top_consuming_value' => 0.0,
+        'monthly_issuance_value' => 0.0,
+    ];
+
+    try {
+        $stmt = $pdo->query("
+            SELECT 
+                COUNT(*) as total_items,
+                COALESCE(SUM(stock_quantity), 0) as total_stock_units,
+                COALESCE(SUM(stock_quantity * unit_price), 0) as total_value,
+                SUM(CASE WHEN stock_quantity <= min_stock_level AND stock_quantity > 0 THEN 1 ELSE 0 END) as low_stock,
+                SUM(CASE WHEN stock_quantity = 0 THEN 1 ELSE 0 END) as out_of_stock
+            FROM inventory_master
+        ");
+        $invRow = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        $priInventory['total_items'] = (int) ($invRow['total_items'] ?? 0);
+        $priInventory['total_stock_units'] = (int) ($invRow['total_stock_units'] ?? 0);
+        $priInventory['total_inventory_value'] = (float) ($invRow['total_value'] ?? 0);
+        $priInventory['low_stock_count'] = (int) ($invRow['low_stock'] ?? 0);
+        $priInventory['out_of_stock_count'] = (int) ($invRow['out_of_stock'] ?? 0);
+
+        $currentMonth = date('Y-m');
+        $stmt = $pdo->prepare("
+            SELECT d.code, d.name, SUM(i.total_value) as total_value
+            FROM issuances i
+            JOIN divisions d ON i.division_id = d.id
+            WHERE strftime('%Y-%m', i.issuance_date) = ?
+            GROUP BY d.id
+            ORDER BY total_value DESC
+            LIMIT 1
+        ");
+        $stmt->execute([$currentMonth]);
+        $topDiv = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($topDiv) {
+            $priInventory['top_consuming_division'] = $topDiv['code'] ?? 'N/A';
+            $priInventory['top_consuming_value'] = (float) ($topDiv['total_value'] ?? 0);
+        }
+
+        $stmt = $pdo->prepare("
+            SELECT COALESCE(SUM(total_value), 0) as total
+            FROM issuances
+            WHERE strftime('%Y-%m', issuance_date) = ?
+        ");
+        $stmt->execute([$currentMonth]);
+        $issuanceRow = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        $priInventory['monthly_issuance_value'] = (float) ($issuanceRow['total'] ?? 0);
+
+    } catch (Exception $ignored) {
+    }
 } catch (Exception $e) {
     $analyticsError = 'Unable to load analytics right now. ' . $e->getMessage();
 }
@@ -666,12 +724,12 @@ $isAnalyticsEmpty = array_sum(array_map('abs', array_values($chart['sales']))) =
         <div class="container-fluid">
 <div class="dashboard-shell">
     <section class="hero-band" aria-labelledby="analyticsHeading">
-        <h1 id="analyticsHeading" class="hero-title">Business Analytics Dashboard</h1>
-        <p class="hero-subtitle">Live insights from sales, purchases, expenses, stock levels, and payment behavior.</p>
+        <h1 id="analyticsHeading" class="hero-title">PRI Supplies Inventory Dashboard</h1>
+        <p class="hero-subtitle">Real-time overview of inventory status, supply consumption, and stock value.</p>
         <div class="hero-stats">
             <span class="hero-chip"><i class="far fa-calendar-alt"></i> <?php echo date('F Y'); ?></span>
-            <span class="hero-chip"><i class="fas fa-boxes"></i> <?php echo number_format($kpi['total_products']); ?> products tracked</span>
-            <span class="hero-chip"><i class="fas fa-exclamation-triangle"></i> <?php echo number_format($kpi['low_stock_count']); ?> low stock alerts</span>
+            <span class="hero-chip"><i class="fas fa-boxes"></i> <?php echo number_format($priInventory['total_items']); ?> items tracked</span>
+            <span class="hero-chip"><i class="fas fa-exclamation-triangle"></i> <?php echo number_format($priInventory['low_stock_count']); ?> low stock alerts</span>
         </div>
     </section>
 
@@ -686,38 +744,38 @@ $isAnalyticsEmpty = array_sum(array_map('abs', array_values($chart['sales']))) =
         <div class="col-12 col-sm-6 col-xl-3">
             <article class="card metric-card">
                 <div class="card-body">
-                    <div class="metric-label">Sales (<?php echo htmlspecialchars($focusMonthLabel, ENT_QUOTES, 'UTF-8'); ?>)</div>
-                    <p class="metric-value">$<?php echo number_format($kpi['sales_month'], 2); ?></p>
-                    <span class="metric-note"><span class="badge-analytics badge-primary-soft">Revenue</span></span>
+                    <div class="metric-label">Total Inventory Value</div>
+                    <p class="metric-value">₱<?php echo number_format($priInventory['total_inventory_value'], 2); ?></p>
+                    <span class="metric-note"><span class="badge-analytics badge-primary-soft">Current Stock Worth</span></span>
                 </div>
             </article>
         </div>
         <div class="col-12 col-sm-6 col-xl-3">
             <article class="card metric-card">
                 <div class="card-body">
-                    <div class="metric-label">Purchases (<?php echo htmlspecialchars($focusMonthLabel, ENT_QUOTES, 'UTF-8'); ?>)</div>
-                    <p class="metric-value">$<?php echo number_format($kpi['purchase_month'], 2); ?></p>
-                    <span class="metric-note"><span class="badge-analytics badge-warning-soft">Cost of Stock</span></span>
+                    <div class="metric-label">Total Stock Units</div>
+                    <p class="metric-value"><?php echo number_format($priInventory['total_stock_units']); ?></p>
+                    <span class="metric-note"><span class="badge-analytics badge-primary-soft">All Items</span></span>
                 </div>
             </article>
         </div>
         <div class="col-12 col-sm-6 col-xl-3">
             <article class="card metric-card">
                 <div class="card-body">
-                    <div class="metric-label">Operating Expense (<?php echo htmlspecialchars($focusMonthLabel, ENT_QUOTES, 'UTF-8'); ?>)</div>
-                    <p class="metric-value">$<?php echo number_format($kpi['expense_month'], 2); ?></p>
-                    <span class="metric-note"><span class="badge-analytics badge-warning-soft">This Month</span></span>
+                    <div class="metric-label">Monthly Issuance (<?php echo date('M Y'); ?>)</div>
+                    <p class="metric-value">₱<?php echo number_format($priInventory['monthly_issuance_value'], 2); ?></p>
+                    <span class="metric-note"><span class="badge-analytics badge-warning-soft">RSMI Total</span></span>
                 </div>
             </article>
         </div>
         <div class="col-12 col-sm-6 col-xl-3">
             <article class="card metric-card">
                 <div class="card-body">
-                    <div class="metric-label">Estimated Net (<?php echo htmlspecialchars($focusMonthLabel, ENT_QUOTES, 'UTF-8'); ?>)</div>
-                    <p class="metric-value">$<?php echo number_format($kpi['profit_month'], 2); ?></p>
+                    <div class="metric-label">Top Consuming Division</div>
+                    <p class="metric-value"><?php echo htmlspecialchars($priInventory['top_consuming_division'] ?? 'N/A'); ?></p>
                     <span class="metric-note">
-                        <span class="badge-analytics <?php echo $kpi['profit_month'] >= 0 ? 'badge-success-soft' : 'badge-warning-soft'; ?>">
-                            <?php echo $kpi['profit_month'] >= 0 ? 'Positive' : 'Negative'; ?>
+                        <span class="badge-analytics <?php echo $priInventory['top_consuming_value'] > 0 ? 'badge-success-soft' : 'badge-warning-soft'; ?>">
+                            ₱<?php echo number_format($priInventory['top_consuming_value'], 2); ?>
                         </span>
                     </span>
                 </div>
@@ -726,44 +784,44 @@ $isAnalyticsEmpty = array_sum(array_map('abs', array_values($chart['sales']))) =
         <div class="col-12 col-sm-6 col-xl-3">
             <article class="card metric-card">
                 <div class="card-body">
-                    <div class="metric-label">Collection Rate (<?php echo htmlspecialchars($focusMonthLabel, ENT_QUOTES, 'UTF-8'); ?>)</div>
-                    <p class="metric-value"><?php echo number_format($kpi['collection_rate_month'], 1); ?>%</p>
-                    <span class="metric-note">Based on paid vs billed sales</span>
+                    <div class="metric-label">Low Stock Alerts</div>
+                    <p class="metric-value"><?php echo number_format($priInventory['low_stock_count']); ?></p>
+                    <span class="metric-note">Items below minimum level</span>
                 </div>
             </article>
         </div>
         <div class="col-12 col-sm-6 col-xl-3">
             <article class="card metric-card">
                 <div class="card-body">
-                    <div class="metric-label">Inventory Health</div>
-                    <p class="metric-value"><?php echo number_format($kpi['inventory_health'], 1); ?>%</p>
-                    <span class="metric-note">Healthy vs low stock ratio</span>
+                    <div class="metric-label">Out of Stock</div>
+                    <p class="metric-value"><?php echo number_format($priInventory['out_of_stock_count']); ?></p>
+                    <span class="metric-note">Items with zero quantity</span>
                 </div>
             </article>
         </div>
         <div class="col-12 col-sm-6 col-xl-3">
             <article class="card metric-card">
                 <div class="card-body">
-                    <div class="metric-label">Sales Due (Total)</div>
-                    <p class="metric-value">$<?php echo number_format($kpi['sales_due_total'], 2); ?></p>
-                    <span class="metric-note">Outstanding customer balance</span>
+                    <div class="metric-label">Total Items</div>
+                    <p class="metric-value"><?php echo number_format($priInventory['total_items']); ?></p>
+                    <span class="metric-note">In inventory masterlist</span>
                 </div>
             </article>
         </div>
         <div class="col-12 col-sm-6 col-xl-3">
             <article class="card metric-card">
                 <div class="card-body">
-                    <div class="metric-label">Purchase Due (Total)</div>
-                    <p class="metric-value">$<?php echo number_format($kpi['purchase_due_total'], 2); ?></p>
-                    <span class="metric-note">Outstanding supplier balance</span>
+                    <div class="metric-label">Total Divisions</div>
+                    <p class="metric-value">7</p>
+                    <span class="metric-note">Cost centers configured</span>
                 </div>
             </article>
         </div>
     </div>
 
-    <?php if ($isAnalyticsEmpty): ?>
+    <?php if ($priInventory['total_items'] === 0): ?>
         <div class="empty-state mt-3">
-            No analytics records are available yet. Add sales, purchases, expenses, and products to populate this dashboard.
+            No inventory data available yet. Go to <a href="index.php?page=import_csv">Import CSV</a> to load inventory from RPCI file.
         </div>
     <?php endif; ?>
 

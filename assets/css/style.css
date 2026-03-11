@@ -293,7 +293,7 @@ h6,
 }
 
 .sidebar-redesign .brand-text {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: #f8fafc !important;
 }
@@ -341,7 +341,7 @@ h6,
   gap: 10px;
   color: #f1f5f9 !important;
   opacity: 1 !important;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 400;
   white-space: nowrap;
   overflow: hidden;
@@ -430,14 +430,14 @@ h6,
 
 .sidebar-redesign .sidebar-user-name {
   color: #f8fafc;
-  font-size: 0.86rem;
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1.2;
 }
 
 .sidebar-redesign .sidebar-user-role {
   color: #bfdbfe;
-  font-size: 0.74rem;
+  font-size: 0.7rem;
   line-height: 1.2;
 }
 
